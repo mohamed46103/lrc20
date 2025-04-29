@@ -1,0 +1,1677 @@
+use sea_orm::{DbBackend, Statement};
+use sea_orm_migration::prelude::*;
+use sea_query::Alias;
+
+#[derive(DeriveMigrationName)]
+pub struct Migration;
+
+#[derive(Iden)]
+pub enum L1Transaction {
+    Table,
+    Id,
+    Txid,
+    RawTx,
+    BlockNumber,
+    BlockHash,
+    Timestamp,
+    Status,
+    TxType,
+}
+
+#[derive(Iden)]
+pub enum Token {
+    Table,
+    Id,
+    Txid,
+    Vout,
+    TokenPubkey,
+    TokenAmount,
+}
+
+#[derive(Iden)]
+enum Proof {
+    Table,
+    Id,
+    Txid,
+    Vout,
+    SpendTxid,
+    SpendVout,
+    IsFrozen,
+    Script,
+    ScriptType,
+    ProofType,
+    Metadata,
+}
+
+#[derive(Iden)]
+enum InnerKey {
+    Table,
+    Id,
+    Txid,
+    Vout,
+    Pubkey,
+}
+
+#[derive(Iden)]
+pub enum Announcement {
+    Table,
+    Id,
+    Txid,
+    Type,
+    TokenPubkey,
+}
+
+#[derive(Iden)]
+enum TokenPubkeyAnnouncement {
+    Table,
+    Id,
+    Txid,
+    Name,
+    Symbol,
+    Decimal,
+    MaxSupply,
+    IsFreezable,
+}
+
+#[derive(Iden)]
+enum TokenLogoAnnouncement {
+    Table,
+    Id,
+    Txid,
+    LogoUrl,
+}
+
+#[derive(Iden)]
+enum TxFreezeAnnouncement {
+    Table,
+    Id,
+    Txid,
+    FreezeTxid,
+    FreezeVout,
+}
+
+#[derive(Iden)]
+enum PubkeyFreezeAnnouncement {
+    Table,
+    Id,
+    Txid,
+    FreezePubkey,
+}
+
+#[derive(Iden)]
+enum IssueAnnouncement {
+    Table,
+    Id,
+    Txid,
+    Amount,
+}
+
+#[derive(Iden)]
+enum TransferOwnershipAnnouncement {
+    Table,
+    Id,
+    Txid,
+    NewOwner,
+}
+
+#[derive(Iden)]
+enum P2WSHProof {
+    Table,
+    Id,
+    Txid,
+    Vout,
+    Script,
+}
+
+#[derive(Iden)]
+enum Bulletproof {
+    Table,
+    Id,
+    Txid,
+    Vout,
+    SenderKey,
+    Commitment,
+    Proof,
+    Signature,
+    TokenPubkeySignature,
+}
+
+#[derive(Iden)]
+enum SparkExitProof {
+    Table,
+    Id,
+    Txid,
+    Vout,
+    RevocationKey,
+    DelayKey,
+    Locktime,
+}
+
+#[derive(Iden)]
+enum MultisigProof {
+    Table,
+    Id,
+    Txid,
+    Vout,
+    M,
+}
+
+#[derive(Iden)]
+enum LightningCommitmentProof {
+    Table,
+    Id,
+    Txid,
+    Vout,
+    RevocationPubkey,
+    LocalDelayedPubkey,
+    ToSelfDelay,
+}
+
+#[derive(Iden)]
+enum LightningHtlcProof {
+    Table,
+    Id,
+    Txid,
+    Vout,
+    RevocationKeyHash,
+    RemoteHtlcKey,
+    LocalHtlcKey,
+    PaymentHash,
+    CltvExpiry,
+}
+
+#[derive(Iden)]
+enum MempoolTransaction {
+    Table,
+    Id,
+    Txid,
+    Status,
+    CreatedAt,
+    Sender,
+}
+
+#[derive(Iden)]
+pub enum SparkTransaction {
+    Table,
+    Id,
+    TxHash,
+    OperationType,
+    Status,
+    Network,
+    CreatedAt,
+}
+
+#[derive(Iden)]
+pub enum SparkOutput {
+    Table,
+    Id,
+    SparkId,
+    TxHash,
+    Vout,
+    TokenPubkey,
+    OwnerPubkey,
+    WithdrawalBondSats,
+    WithdrawalLocktime,
+    ExitScript,
+    TokenAmount,
+    RevocationPubkey,
+    RevocationSecretKey,
+    IsFrozen,
+    WithdrawTxid,
+    WithdrawVout,
+    WithdrawBlockhash,
+    SpendTxid,
+    SpendVout,
+}
+
+#[derive(Iden)]
+pub enum SparkBurn {
+    Table,
+    Id,
+    TxHash,
+    Vout,
+    TokenPubkey,
+    Amount,
+}
+
+#[derive(Iden)]
+pub enum OperatorSignature {
+    Table,
+    Id,
+    TxHash,
+    OperatorIdentityPubkey,
+    Signature,
+    Type,
+}
+
+#[derive(Iden)]
+pub enum UserSignature {
+    Table,
+    Id,
+    TxHash,
+    OwnerPubkey,
+    Signature,
+    OperatorPublicKey,
+    Type,
+    Index,
+}
+
+#[derive(Iden)]
+pub enum SparkIssueData {
+    Table,
+    Id,
+    TxHash,
+    IssuerPubkey,
+    OperatorPubkey,
+    Nonce,
+    IssuerProvidedTimestamp,
+    IssuerSignature,
+    IssueAmount,
+    SignatureType,
+}
+
+#[derive(Iden)]
+pub enum SparkFreezeData {
+    Table,
+    Id,
+    TxHash,
+    IssuerPubkey,
+    UserPubkey,
+    IssuerProvidedTimestamp,
+    OperatorIdentityPubkey,
+    ShouldUnfreeze,
+    IssuerSignature,
+}
+
+#[derive(Iden)]
+enum IndexerState {
+    Table,
+    Id,
+    LastBlockHash,
+    LastBlockHeight,
+    UpdatedAt,
+}
+
+#[async_trait::async_trait]
+impl MigrationTrait for Migration {
+    async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        // Create enum types
+        let create_enums = [
+            ("signature_type", vec!["schnorr", "ecdsa"]),
+            (
+                "l1_tx_status",
+                vec!["handling", "attached", "invalid_issue"],
+            ),
+            (
+                "mempool_status",
+                vec![
+                    "initialized",
+                    "waiting_mined",
+                    "pending",
+                    "mined",
+                    "attaching",
+                ],
+            ),
+            (
+                "l1_tx_type",
+                vec!["issue", "transfer", "spark_exit", "announcement"],
+            ),
+            (
+                "proof_type",
+                vec![
+                    "spark_exit",
+                    "p2tr",
+                    "p2wsh",
+                    "p2wpkh",
+                    "empty",
+                    "multisig",
+                    "lightning",
+                    "lightning_htlc",
+                    "bulletproof",
+                ],
+            ),
+            ("script_type", vec!["p2tr", "p2wsh", "p2wpkh"]),
+            (
+                "announcement_type",
+                vec![
+                    "issue",
+                    "tx_freeze",
+                    "pubkey_freeze",
+                    "transfer_ownership",
+                    "token_pubkey",
+                    "token_logo",
+                ],
+            ),
+            (
+                "operation_type",
+                vec![
+                    "user_transfer",
+                    "user_burn",
+                    "issuer_announce",
+                    "issuer_mint",
+                    "issuer_transfer",
+                    "issuer_freeze",
+                    "issuer_unfreeze",
+                    "issuer_burn",
+                ],
+            ),
+            ("status", vec!["started", "signed", "finalized"]),
+            ("network", vec!["mainnet", "regtest", "testnet", "signet"]),
+        ];
+
+        for (enum_name, values) in create_enums.iter() {
+            let values_str = values.join("', '");
+            let create_enum = format!(
+                r#"DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '{name}') 
+                THEN CREATE TYPE {name} AS ENUM ('{values}'); END IF; END$$;"#,
+                name = enum_name,
+                values = values_str
+            );
+            manager
+                .get_connection()
+                .execute(Statement::from_string(DbBackend::Postgres, create_enum))
+                .await?;
+        }
+        // Create main transaction table
+        manager
+            .create_table(
+                Table::create()
+                    .table(L1Transaction::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(L1Transaction::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(L1Transaction::Txid)
+                            .binary()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(ColumnDef::new(L1Transaction::RawTx).binary().not_null())
+                    .col(
+                        ColumnDef::new(L1Transaction::BlockNumber)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(L1Transaction::BlockHash).binary().not_null())
+                    .col(
+                        ColumnDef::new(L1Transaction::Timestamp)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(L1Transaction::Status)
+                            .custom(Alias::new("l1_tx_status"))
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(L1Transaction::TxType)
+                            .custom(Alias::new("l1_tx_type"))
+                            .not_null(),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(Announcement::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(Announcement::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(Announcement::Txid)
+                            .binary()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(
+                        ColumnDef::new(Announcement::TokenPubkey)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Announcement::Type)
+                            .custom(Alias::new("announcement_type"))
+                            .not_null(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(Announcement::Table, Announcement::Txid)
+                            .to(L1Transaction::Table, L1Transaction::Txid)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        // Create proofs table
+        manager
+            .create_table(
+                Table::create()
+                    .table(Proof::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(Proof::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(Proof::Txid).binary().not_null())
+                    .col(ColumnDef::new(Proof::Vout).integer().not_null())
+                    .col(ColumnDef::new(Proof::SpendTxid).binary())
+                    .col(ColumnDef::new(Proof::SpendVout).integer())
+                    .col(ColumnDef::new(Proof::IsFrozen).boolean().not_null())
+                    .col(ColumnDef::new(Proof::Script).binary().not_null())
+                    .col(ColumnDef::new(Proof::Metadata).binary())
+                    .col(
+                        ColumnDef::new(Proof::ScriptType)
+                            .custom(Alias::new("script_type"))
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Proof::ProofType)
+                            .custom(Alias::new("proof_type"))
+                            .not_null(),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_spark_output")
+                            .table(Proof::Table)
+                            .col(Proof::Txid)
+                            .col(Proof::Vout)
+                            .unique(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(Proof::Table, Proof::Txid)
+                            .to(L1Transaction::Table, L1Transaction::Txid)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(Token::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(Token::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(Token::Txid).binary().not_null())
+                    .col(ColumnDef::new(Token::Vout).integer().not_null())
+                    .col(ColumnDef::new(Token::TokenPubkey).binary().not_null())
+                    .col(ColumnDef::new(Token::TokenAmount).binary().not_null())
+                    .index(
+                        Index::create()
+                            .name("idx_token")
+                            .table(Token::Table)
+                            .col(Token::Txid)
+                            .col(Token::Vout)
+                            .unique(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(Token::Table, (Token::Txid, Token::Vout))
+                            .to(Proof::Table, (Proof::Txid, Proof::Vout))
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(P2WSHProof::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(P2WSHProof::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(P2WSHProof::Txid).binary().not_null())
+                    .col(ColumnDef::new(P2WSHProof::Vout).integer().not_null())
+                    .col(ColumnDef::new(P2WSHProof::Script).binary().not_null())
+                    .index(
+                        Index::create()
+                            .name("idx_p2wsh_proof")
+                            .table(P2WSHProof::Table)
+                            .col(P2WSHProof::Txid)
+                            .col(P2WSHProof::Vout)
+                            .unique(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(P2WSHProof::Table, (P2WSHProof::Txid, P2WSHProof::Vout))
+                            .to(Proof::Table, (Proof::Txid, Proof::Vout))
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(Bulletproof::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(Bulletproof::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(Bulletproof::Txid).binary().not_null())
+                    .col(ColumnDef::new(Bulletproof::Vout).integer().not_null())
+                    .col(ColumnDef::new(Bulletproof::SenderKey).binary().not_null())
+                    .col(ColumnDef::new(Bulletproof::Commitment).binary().not_null())
+                    .col(ColumnDef::new(Bulletproof::Proof).binary().not_null())
+                    .col(ColumnDef::new(Bulletproof::Signature).binary().not_null())
+                    .col(
+                        ColumnDef::new(Bulletproof::TokenPubkeySignature)
+                            .binary()
+                            .not_null(),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_bulletproof")
+                            .table(Bulletproof::Table)
+                            .col(Bulletproof::Txid)
+                            .col(Bulletproof::Vout)
+                            .unique(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(Bulletproof::Table, (Bulletproof::Txid, Bulletproof::Vout))
+                            .to(Proof::Table, (Proof::Txid, Proof::Vout))
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(SparkExitProof::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(SparkExitProof::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(SparkExitProof::Txid).binary().not_null())
+                    .col(ColumnDef::new(SparkExitProof::Vout).integer().not_null())
+                    .col(ColumnDef::new(SparkExitProof::DelayKey).binary().not_null())
+                    .col(
+                        ColumnDef::new(SparkExitProof::RevocationKey)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkExitProof::Locktime)
+                            .integer()
+                            .not_null(),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_spark_exit_proof")
+                            .table(SparkExitProof::Table)
+                            .col(SparkExitProof::Txid)
+                            .col(SparkExitProof::Vout)
+                            .unique(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(
+                                SparkExitProof::Table,
+                                (SparkExitProof::Txid, SparkExitProof::Vout),
+                            )
+                            .to(Proof::Table, (Proof::Txid, Proof::Vout))
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(MultisigProof::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(MultisigProof::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(MultisigProof::Txid).binary().not_null())
+                    .col(ColumnDef::new(MultisigProof::Vout).integer().not_null())
+                    .col(ColumnDef::new(MultisigProof::M).integer().not_null())
+                    .index(
+                        Index::create()
+                            .name("idx_multisig_proof")
+                            .table(MultisigProof::Table)
+                            .col(MultisigProof::Txid)
+                            .col(MultisigProof::Vout)
+                            .unique(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(
+                                MultisigProof::Table,
+                                (MultisigProof::Txid, MultisigProof::Vout),
+                            )
+                            .to(Proof::Table, (Proof::Txid, Proof::Vout))
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(LightningCommitmentProof::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(LightningCommitmentProof::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(LightningCommitmentProof::Txid)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(LightningCommitmentProof::Vout)
+                            .integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(LightningCommitmentProof::RevocationPubkey)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(LightningCommitmentProof::LocalDelayedPubkey)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(LightningCommitmentProof::ToSelfDelay)
+                            .integer()
+                            .not_null(),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_lightning_commitment_proof")
+                            .table(LightningCommitmentProof::Table)
+                            .col(LightningCommitmentProof::Txid)
+                            .col(LightningCommitmentProof::Vout)
+                            .unique(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(
+                                LightningCommitmentProof::Table,
+                                (
+                                    LightningCommitmentProof::Txid,
+                                    LightningCommitmentProof::Vout,
+                                ),
+                            )
+                            .to(Proof::Table, (Proof::Txid, Proof::Vout))
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(LightningHtlcProof::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(LightningHtlcProof::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(LightningHtlcProof::Txid).binary().not_null())
+                    .col(
+                        ColumnDef::new(LightningHtlcProof::Vout)
+                            .integer()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(LightningHtlcProof::CltvExpiry).integer())
+                    .col(
+                        ColumnDef::new(LightningHtlcProof::LocalHtlcKey)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(LightningHtlcProof::PaymentHash)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(LightningHtlcProof::RemoteHtlcKey)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(LightningHtlcProof::RevocationKeyHash)
+                            .binary()
+                            .not_null(),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_lightning_htlc_proof")
+                            .table(LightningHtlcProof::Table)
+                            .col(LightningHtlcProof::Txid)
+                            .col(LightningHtlcProof::Vout)
+                            .unique(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(
+                                LightningHtlcProof::Table,
+                                (LightningHtlcProof::Txid, LightningHtlcProof::Vout),
+                            )
+                            .to(Proof::Table, (Proof::Txid, Proof::Vout))
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(MempoolTransaction::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(MempoolTransaction::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(MempoolTransaction::Txid)
+                            .binary()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(
+                        ColumnDef::new(MempoolTransaction::Status)
+                            .custom(Alias::new("mempool_status"))
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(MempoolTransaction::CreatedAt)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(MempoolTransaction::Sender).string())
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(MempoolTransaction::Table, MempoolTransaction::Txid)
+                            .to(L1Transaction::Table, L1Transaction::Txid)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(InnerKey::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(InnerKey::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(InnerKey::Txid).binary().not_null())
+                    .col(ColumnDef::new(InnerKey::Vout).integer().not_null())
+                    .col(ColumnDef::new(InnerKey::Pubkey).binary().not_null())
+                    .index(
+                        Index::create()
+                            .name("idx_inner_key")
+                            .table(InnerKey::Table)
+                            .col(InnerKey::Txid)
+                            .col(InnerKey::Vout)
+                            .unique(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(InnerKey::Table, (InnerKey::Txid, InnerKey::Vout))
+                            .to(Proof::Table, (Proof::Txid, Proof::Vout))
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        // Create announcement tables
+        manager
+            .create_table(
+                Table::create()
+                    .table(TokenPubkeyAnnouncement::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(TokenPubkeyAnnouncement::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(TokenPubkeyAnnouncement::Txid)
+                            .binary()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(
+                        ColumnDef::new(TokenPubkeyAnnouncement::Name)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(TokenPubkeyAnnouncement::Symbol)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(TokenPubkeyAnnouncement::Decimal)
+                            .unsigned()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(TokenPubkeyAnnouncement::MaxSupply)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(TokenPubkeyAnnouncement::IsFreezable)
+                            .boolean()
+                            .not_null(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(
+                                TokenPubkeyAnnouncement::Table,
+                                TokenPubkeyAnnouncement::Txid,
+                            )
+                            .to(Announcement::Table, Announcement::Txid)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(TxFreezeAnnouncement::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(TxFreezeAnnouncement::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(TxFreezeAnnouncement::Txid)
+                            .binary()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(
+                        ColumnDef::new(TxFreezeAnnouncement::FreezeTxid)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(TxFreezeAnnouncement::FreezeVout)
+                            .integer()
+                            .not_null(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(TxFreezeAnnouncement::Table, TxFreezeAnnouncement::Txid)
+                            .to(Announcement::Table, Announcement::Txid)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(PubkeyFreezeAnnouncement::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(PubkeyFreezeAnnouncement::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(PubkeyFreezeAnnouncement::Txid)
+                            .binary()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(
+                        ColumnDef::new(PubkeyFreezeAnnouncement::FreezePubkey)
+                            .binary()
+                            .not_null(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(
+                                PubkeyFreezeAnnouncement::Table,
+                                PubkeyFreezeAnnouncement::Txid,
+                            )
+                            .to(Announcement::Table, Announcement::Txid)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(IssueAnnouncement::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(IssueAnnouncement::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(IssueAnnouncement::Txid)
+                            .binary()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(
+                        ColumnDef::new(IssueAnnouncement::Amount)
+                            .binary()
+                            .not_null(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(IssueAnnouncement::Table, IssueAnnouncement::Txid)
+                            .to(Announcement::Table, Announcement::Txid)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(TransferOwnershipAnnouncement::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(TransferOwnershipAnnouncement::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(TransferOwnershipAnnouncement::Txid)
+                            .binary()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(
+                        ColumnDef::new(TransferOwnershipAnnouncement::NewOwner)
+                            .binary()
+                            .not_null(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(
+                                TransferOwnershipAnnouncement::Table,
+                                TransferOwnershipAnnouncement::Txid,
+                            )
+                            .to(Announcement::Table, Announcement::Txid)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(TokenLogoAnnouncement::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(TokenLogoAnnouncement::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(TokenLogoAnnouncement::Txid)
+                            .binary()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(
+                        ColumnDef::new(TokenLogoAnnouncement::LogoUrl)
+                            .string()
+                            .not_null(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(
+                                TransferOwnershipAnnouncement::Table,
+                                TransferOwnershipAnnouncement::Txid,
+                            )
+                            .to(Announcement::Table, Announcement::Txid)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(SparkTransaction::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(SparkTransaction::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkTransaction::TxHash)
+                            .binary()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkTransaction::OperationType)
+                            .custom(Alias::new("operation_type"))
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkTransaction::Status)
+                            .custom(Alias::new("status"))
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(SparkTransaction::Network).integer())
+                    .col(
+                        ColumnDef::new(SparkTransaction::CreatedAt)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(SparkOutput::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(SparkOutput::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkOutput::SparkId)
+                            .string()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(ColumnDef::new(SparkOutput::TxHash).binary().not_null())
+                    .col(ColumnDef::new(SparkOutput::Vout).integer().not_null())
+                    .col(ColumnDef::new(SparkOutput::TokenPubkey).binary().not_null())
+                    .col(ColumnDef::new(SparkOutput::OwnerPubkey).binary().not_null())
+                    .col(
+                        ColumnDef::new(SparkOutput::WithdrawalBondSats)
+                            .integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkOutput::WithdrawalLocktime)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(SparkOutput::ExitScript).binary())
+                    .col(ColumnDef::new(SparkOutput::TokenAmount).binary().not_null())
+                    .col(
+                        ColumnDef::new(SparkOutput::RevocationPubkey)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(SparkOutput::RevocationSecretKey).binary())
+                    .col(ColumnDef::new(SparkOutput::IsFrozen).boolean())
+                    .col(ColumnDef::new(SparkOutput::WithdrawTxid).binary())
+                    .col(ColumnDef::new(SparkOutput::WithdrawVout).integer())
+                    .col(ColumnDef::new(SparkOutput::WithdrawBlockhash).binary())
+                    .col(ColumnDef::new(SparkOutput::SpendTxid).binary())
+                    .col(ColumnDef::new(SparkOutput::SpendVout).integer())
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(SparkOutput::Table, SparkOutput::TxHash)
+                            .to(SparkTransaction::Table, SparkTransaction::TxHash)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(SparkBurn::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(SparkBurn::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(SparkBurn::TxHash).binary().not_null())
+                    .col(ColumnDef::new(SparkBurn::Vout).integer().not_null())
+                    .col(ColumnDef::new(SparkBurn::TokenPubkey).binary().not_null())
+                    .col(ColumnDef::new(SparkBurn::Amount).binary().not_null())
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(SparkBurn::Table, SparkBurn::TxHash)
+                            .to(SparkTransaction::Table, SparkTransaction::TxHash)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(OperatorSignature::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(OperatorSignature::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(OperatorSignature::TxHash)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(OperatorSignature::OperatorIdentityPubkey)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(OperatorSignature::Signature).binary())
+                    .col(
+                        ColumnDef::new(OperatorSignature::Type)
+                            .custom(Alias::new("signature_type")),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(OperatorSignature::Table, OperatorSignature::TxHash)
+                            .to(SparkTransaction::Table, SparkTransaction::TxHash)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(UserSignature::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(UserSignature::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(UserSignature::TxHash).binary().not_null())
+                    .col(
+                        ColumnDef::new(UserSignature::OwnerPubkey)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(UserSignature::Signature).binary().not_null())
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(UserSignature::Table, UserSignature::TxHash)
+                            .to(SparkTransaction::Table, SparkTransaction::TxHash)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(SparkIssueData::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(SparkIssueData::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkIssueData::TxHash)
+                            .binary()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkIssueData::IssuerPubkey)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(SparkIssueData::Nonce).integer().not_null())
+                    .col(
+                        ColumnDef::new(SparkIssueData::IssuerProvidedTimestamp)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkIssueData::IssuerSignature)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkIssueData::IssueAmount)
+                            .binary()
+                            .not_null(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(SparkIssueData::Table, SparkIssueData::TxHash)
+                            .to(SparkTransaction::Table, SparkTransaction::TxHash)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(SparkFreezeData::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(SparkFreezeData::Id)
+                            .big_integer()
+                            .auto_increment()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkFreezeData::TxHash)
+                            .binary()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkFreezeData::IssuerPubkey)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkFreezeData::UserPubkey)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkFreezeData::IssuerProvidedTimestamp)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkFreezeData::OperatorIdentityPubkey)
+                            .binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkFreezeData::ShouldUnfreeze)
+                            .boolean()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SparkFreezeData::IssuerSignature)
+                            .binary()
+                            .not_null(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(SparkFreezeData::Table, SparkFreezeData::TxHash)
+                            .to(SparkTransaction::Table, SparkTransaction::TxHash)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(IndexerState::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(IndexerState::Id)
+                            .integer()
+                            .not_null()
+                            .primary_key()
+                            .default(1),
+                    )
+                    .col(ColumnDef::new(IndexerState::LastBlockHash).binary().null())
+                    .col(
+                        ColumnDef::new(IndexerState::LastBlockHeight)
+                            .big_integer()
+                            .null(),
+                    )
+                    .col(ColumnDef::new(IndexerState::UpdatedAt).integer().null())
+                    .check(Expr::col(IndexerState::Id).eq(1))
+                    .to_owned(),
+            )
+            .await?;
+
+        let insert_initial_state = Statement::from_string(
+            DbBackend::Postgres,
+            r#"INSERT INTO indexer_state (id) 
+               VALUES (1)
+               ON CONFLICT (id) DO NOTHING;"#
+                .to_string(),
+        );
+        manager
+            .get_connection()
+            .execute(insert_initial_state)
+            .await?;
+
+        Ok(())
+    }
+
+    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        let drop_enums = [
+            "signature_type",
+            "l1_tx_status",
+            "mempool_status",
+            "l1_tx_type",
+            "proof_type",
+            "script_type",
+            "announcement_type",
+        ];
+
+        for enum_name in drop_enums.iter() {
+            let drop_enum = format!(
+                r#"DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_type WHERE typname = '{name}') 
+                THEN DROP TYPE {name} CASCADE; END IF; END$$;"#,
+                name = enum_name
+            );
+            manager
+                .get_connection()
+                .execute(Statement::from_string(DbBackend::Postgres, drop_enum))
+                .await?;
+        }
+
+        // Drop tables
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(SparkFreezeData::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(SparkIssueData::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(UserSignature::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(OperatorSignature::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(Table::drop().if_exists().table(SparkBurn::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .cascade()
+                    .table(SparkOutput::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .cascade()
+                    .table(SparkTransaction::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(TransferOwnershipAnnouncement::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(IssueAnnouncement::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(PubkeyFreezeAnnouncement::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(TxFreezeAnnouncement::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(TokenPubkeyAnnouncement::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(TokenLogoAnnouncement::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(Table::drop().if_exists().table(InnerKey::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .cascade()
+                    .table(Proof::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .cascade()
+                    .table(L1Transaction::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(Bulletproof::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(LightningCommitmentProof::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(LightningHtlcProof::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(MultisigProof::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(MempoolTransaction::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(Table::drop().table(P2WSHProof::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(SparkExitProof::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .cascade()
+                    .table(Announcement::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(Table::drop().table(Token::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .if_exists()
+                    .table(IndexerState::Table)
+                    .to_owned(),
+            )
+            .await?;
+
+        Ok(())
+    }
+}

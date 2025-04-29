@@ -1,0 +1,28 @@
+[build-system]
+requires = [
+    "setuptools>=61.0",
+    "wheel",
+    "grpcio-tools",
+    "mypy-protobuf>=3.6",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lrc20-py"
+description = "Python SDK for LRC20/LRC20"
+requires-python = ">=3.11"
+dependencies = [
+    "lrcdk",
+    "grpcio",
+    "protobuf",
+]
+dynamic = ["version"]
+
+[tool.setuptools]
+packages = { find = {} }
+
+[tool.setuptools.dynamic]
+version = {attr = "lrc20.__version__"}
+
+[tool.mypy]
+plugins = ["mypy_protobuf.main"]

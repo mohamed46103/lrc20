@@ -1,0 +1,35 @@
+[package]
+name = "lrc20-tx-attach"
+description = "LRC20 Protocol's transactions attach module"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+bulletproof = ["lrc20-receipts/bulletproof"]
+
+[dependencies]
+event-bus = { path = "../event-bus" }
+lrc20-types = { path = "../types", features = ["messages"] }
+lrc20-receipts = { path = "../receipts" }
+lrc20-storage = { path = "../storage" }
+
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+bitcoin = { workspace = true }
+tracing = { workspace = true }
+eyre = { workspace = true }
+
+[dev-dependencies]
+lrc20-receipts = { path = "../receipts" }
+lrc20-p2p = { path = "../p2p", features = ["mocks"] }
+lrc20-controller = { path = "../controller" }
+tokio = { workspace = true, features = ["test-util", "macros"] }
+once_cell = { workspace = true }
+tokio-test = { version = "0.4.4" }
+serde_json = { workspace = true }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(test)'] }

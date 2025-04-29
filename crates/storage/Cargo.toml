@@ -1,0 +1,55 @@
+[package]
+name = "lrc20-storage"
+description = "LRC20 Node's storage implementation(s)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+bulletproof = [
+    "lrc20-types/bulletproof",
+    "dep:k256",
+    "lrc20-receipts/bulletproof",
+]
+
+[dependencies]
+lrc20-types = { path = "../types", features = ["serde", "consensus"] }
+lrc20-receipts = { path = "../receipts", features = ["serde"] }
+migration = { path = "./src/migration" }
+k256 = { version = "0.13.2", optional = true }
+tracing = { workspace = true }
+
+bitcoin = { workspace = true, features = ["serde"] }
+thiserror = { workspace = true }
+async-trait = { workspace = true }
+eyre = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true, features = ["alloc"] }
+hex = { workspace = true, features = ["serde"] }
+
+
+serde_bytes = { version = "0.11.14" }
+core2 = { version = "0.4.0" }
+chrono = { workspace = true, features = ["default", "serde"] }
+
+tokio = { workspace = true, features = [
+    "sync",
+    "rt",
+    "time",
+    "test-util",
+    "macros",
+], default-features = false }
+rust_decimal = { workspace = true }
+sea-orm = { workspace = true, features = [
+    "sqlx-postgres",
+    "runtime-tokio-rustls",
+    "macros",
+] }
+sea-orm-migration = { workspace = true }
+
+[dev-dependencies]
+tokio-test = { version = "0.4.4" }
+
+[patch.crates-io]
+libsqlite3-sys = { version = "=0.27.0" }

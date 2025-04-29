@@ -1,0 +1,27 @@
+[package]
+name = "bindings-kit"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+bdk = { path = "../bdk", features = ["rpc", "use-esplora-blocking"] }
+lrc20-types = { path = "../types", features = ["messages", "consensus"] }
+lrc20-receipts = { path = "../receipts", features = ["consensus"] }
+eyre = { workspace = true }
+bitcoin = { workspace = true, features = ["serde", "base64", "rand"] }
+hex = { workspace = true }
+serde_json = { version = "1.0.128" }
+pyo3 = { version = "0.21.2", default-features = false, features = [
+    "abi3-py311",
+    "experimental-async",
+    "eyre",
+] }
+
+[dev-dependencies]
+once_cell = { version = "1.18.0" }
+tokio = { workspace = true, features = ["macros", "test-util"] }
+
+[build-dependencies]
+pyo3-build-config = { version = "^0.20" }

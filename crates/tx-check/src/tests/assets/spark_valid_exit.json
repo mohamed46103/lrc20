@@ -1,0 +1,101 @@
+{
+  "bitcoin_tx": {
+    "version": 1,
+    "lock_time": 208,
+    "input": [
+      {
+        "previous_output": "64acc1d5e4bf1e1b18d23fbd1e389dd80e83f0bdcf1d722c4a055256cf36a8da:0",
+        "script_sig": "",
+        "sequence": 4294967294,
+        "witness": [
+          "304402202bb6635bf162cdd270c309b74cc3abdf8ab41550f79ab0edb3123299202fe19b022077b633f7e094a2646d2810fca6f4c589e97c91c43dc59b77bfe91a071e450f5f01",
+          "021040345ec1fc9a624195f9f3b1ae73f7472d4aed37b5375d0bd22d428b0f8d86"
+        ]
+      },
+      {
+        "previous_output": "e02f0c0ab1f105690040e277cc4cc8b6789de36d91754ef9298c1edccd5e62d3:1",
+        "script_sig": "",
+        "sequence": 4294967294,
+        "witness": [
+          "7f6a2f89c4e51221d43aa09873af4132956592c06e58be68ab56c0e4f49f6f1963ba4ee716e9a0f06669f4313e0a9a6cb80de1ad058f1d94642f45eeeaa57058",
+          "029600b17520ef3315d2de5a36a435f88fca526173c0e2bb4609e4e0f52b51f76f503bc2e20dac",
+          "c01040345ec1fc9a624195f9f3b1ae73f7472d4aed37b5375d0bd22d428b0f8d86"
+        ]
+      }
+    ],
+    "output": [
+      {
+        "value": 1000,
+        "script_pubkey": "512008ca9e1230d50aa83b7200cf96b62cb0dbdfcd0fd48d57e1b41946b4013f0aba"
+      },
+      {
+        "value": 1000,
+        "script_pubkey": "0014fda7e55223c47f7ae65b0a7a5172bea1a96202ab"
+      },
+      {
+        "value": 4999998971,
+        "script_pubkey": "00144b460f57c7d0f022652ad04d6cbb80e66275657f"
+      }
+    ]
+  },
+  "tx_type": {
+    "type": "Transfer",
+    "data": {
+      "input_proofs": {
+        "1": {
+          "type": "SparkExit",
+          "data": {
+            "receipt": {
+              "token_amount": {
+                "amount": 30000
+              },
+              "token_pubkey": "021040345ec1fc9a624195f9f3b1ae73f7472d4aed37b5375d0bd22d428b0f8d86"
+            },
+            "script": {
+              "revocation_key": "021040345ec1fc9a624195f9f3b1ae73f7472d4aed37b5375d0bd22d428b0f8d86",
+              "delay_key": "021040345ec1fc9a624195f9f3b1ae73f7472d4aed37b5375d0bd22d428b0f8d86",
+              "locktime": 150
+            }
+          }
+        }
+      },
+      "output_proofs": {
+        "0": {
+          "type": "SparkExit",
+          "data": {
+            "receipt": {
+              "token_amount": {
+                "amount": 5000
+              },
+              "token_pubkey": "021040345ec1fc9a624195f9f3b1ae73f7472d4aed37b5375d0bd22d428b0f8d86"
+            },
+            "script": {
+              "revocation_key": "021040345ec1fc9a624195f9f3b1ae73f7472d4aed37b5375d0bd22d428b0f8d86",
+              "delay_key": "021040345ec1fc9a624195f9f3b1ae73f7472d4aed37b5375d0bd22d428b0f8d86",
+              "locktime": 150
+            }
+          }
+        },
+        "1": {
+          "type": "Sig",
+          "data": {
+            "receipt": {
+              "token_amount": {
+                "amount": 25000
+              },
+              "token_pubkey": "021040345ec1fc9a624195f9f3b1ae73f7472d4aed37b5375d0bd22d428b0f8d86"
+            },
+            "inner_key": "021040345ec1fc9a624195f9f3b1ae73f7472d4aed37b5375d0bd22d428b0f8d86",
+            "metadata": null
+          }
+        },
+        "2": {
+          "type": "EmptyReceipt",
+          "data": {
+            "inner_key": "021040345ec1fc9a624195f9f3b1ae73f7472d4aed37b5375d0bd22d428b0f8d86"
+          }
+        }
+      }
+    }
+  }
+}

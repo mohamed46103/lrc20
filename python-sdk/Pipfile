@@ -1,0 +1,23 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+bech32 = "*"
+base58 = "*"
+grpcio = "*"
+protobuf = "*"
+requests = "*"
+
+[dev-packages]
+black = "*"
+build = "*"
+grpcio-tools = "*"
+maturin = "*"
+typing_extensions = "*"
+s3pypi = "*"
+setuptools = ">=61.0"
+
+[requires]
+python_version = "3.11"

@@ -1,0 +1,13 @@
+/target
+*.dev.*
+*.dev
+.idea
+.nigiri
+.vscode/
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+*/bin
+*/lib

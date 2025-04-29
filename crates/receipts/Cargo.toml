@@ -1,0 +1,30 @@
+[package]
+name = "lrc20-receipts"
+description = "Provides cryptography implementation to LRC20 protocol"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+serde = ["dep:serde", "bitcoin/serde"]
+default = ["serde", "std"]
+std = ["bitcoin/std", "bitcoin/rand-std", "serde_json/std"]
+no-std = ["bitcoin/no-std", "serde_json/alloc"]
+bulletproof = ["dep:bulletproof", "std"]
+consensus = []
+
+[dependencies]
+bulletproof = { path = "../bulletproof", optional = true }
+
+bitcoin = { workspace = true }
+serde = { workspace = true, features = ["derive"], optional = true }
+serde_json = { workspace = true }
+once_cell = { workspace = true }
+eyre = { workspace = true }
+hex = { version = "0.4.3" }
+core2 = { version = "0.3.3" }
+hashbrown = { version = "0.14.5" }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(test)'] }

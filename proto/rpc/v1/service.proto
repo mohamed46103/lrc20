@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+package rpc.v1;
+
+import "rpc/v1/types.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+service SparkService {
+  rpc SendSparkSignature(SendSparkSignatureRequest) returns (google.protobuf.Empty);
+  rpc ListSparkTxs(ListSparkTxsRequest) returns (ListSparkTxsResponse);
+  rpc ListTransactions(ListAllTokenTransactionsRequest) returns (ListAllTokenTransactionsResponse);
+  rpc ListWithdrawnOutputs(ListWithdrawnOutputsRequest) returns (ListWithdrawnOutputsResponse);
+  rpc GetSparkTx(GetSparkTxRequest) returns (GetSparkTxResponse);
+  rpc VerifySparkTx(VerifySparkTxRequest) returns (google.protobuf.Empty);
+  rpc FreezeTokens(FreezeTokensRequest) returns (FreezeTokensResponse);
+  rpc GetLastIndexedBlockInfo(google.protobuf.Empty) returns (BlockInfoResponse);
+
+  rpc SendRawLrcTransaction (SendRawTxRequest) returns (google.protobuf.Empty);
+  rpc GetTokenPubkeyInfo (GetTokenPubkeyInfoRequest) returns (GetTokenPubkeyInfoResponse);
+}
+
+message RevocationSecretWithIndex {
+  uint32 input_index = 1;
+  bytes revocation_secret = 2;
+}
+
+message SendSparkSignatureRequest {
+  TokenTransaction final_token_transaction = 1;
+
+  repeated OperatorSpecificOwnerSignature operator_specific_signatures = 2;
+  SparkOperatorSignatureData operator_signature_data = 3;
+
+  repeated RevocationSecretWithIndex revocation_secrets = 4;
+}
+
+message GetSparkTxRequest {
+  bytes final_token_transaction_hash = 1;
+}
+
+message VerifySparkTxRequest {
+  TokenTransaction final_token_transaction = 1;
+}
+
+message ListSparkTxsRequest {
+  optional bytes page_token = 1;
+  optional uint32 page_size = 2;
+}
+
+message ListWithdrawnOutputsRequest {
+  optional bytes blockhash = 1;
+  optional string page_token = 2;
+  optional uint32 page_size = 3;
+}
+
+message ListSparkTxsResponse {
+  repeated TokenTransactionResponse token_transactions = 1;
+  optional bytes next_page_token = 2;
+}
+
+message ListWithdrawnOutputsResponse {
+  repeated TokenOutput outputs = 1;
+  optional string next_page_token = 2;
+}
+
+message GetSparkTxResponse {
+  TokenTransaction final_token_transaction = 1;
+}
+
+message FreezeTokensRequest {
+  FreezeTokensPayload freeze_tokens_payload = 1;
+  bytes issuer_signature = 2;
+}
+
+message FreezeTokensResponse {
+  repeated string impacted_output_ids = 1;
+  repeated bytes impacted_token_amount = 2;  // Decoded uint128
+}
+
+message ListAllTokenTransactionsRequest {
+    optional ListAllTokenTransactionsCursor cursor = 1;
+    optional uint32 page_size = 2;
+
+    // optional filters
+    optional bytes owner_public_key = 3;
+    optional bytes token_public_key = 4;
+    optional google.protobuf.Timestamp before_timestamp = 5;
+    optional google.protobuf.Timestamp after_timestamp = 6;
+    repeated OperationType operation_types = 7;
+}
+
+message ListAllTokenTransactionsResponse {
+    repeated Transaction transactions = 1;
+
+    optional ListAllTokenTransactionsCursor next_cursor = 2;
+}
+
+message BlockInfoResponse {
+  BlockInfo block_info = 1;
+}
+
+message SendRawTxRequest {
+  string tx = 1;
+  optional uint64 max_burn_amount = 2;
+}
+
+message GetTokenPubkeyInfoRequest {
+  repeated bytes public_keys = 1;
+}
+
+message GetTokenPubkeyInfoResponse {
+  repeated TokenPubkeyInfo token_pubkey_infos = 1;
+}
+
+message TokenPubkeyInfo {
+  optional TokenPubkeyAnnouncement announcement = 1;
+  bytes total_supply = 2;
+  optional bytes owner = 3; //scriptbuf
+  optional string logo_url = 4;
+}
+

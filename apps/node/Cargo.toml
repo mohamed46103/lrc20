@@ -1,0 +1,40 @@
+[package]
+name = "lrc20d"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+bulletproof = [
+    "lrc20-tx-check/bulletproof",
+    "lrc20-tx-attach/bulletproof",
+    "lrc20-storage/bulletproof",
+]
+
+[dependencies]
+lrc20-storage = { path = "../../crates/storage" }
+lrc20-types = { path = "../../crates/types" }
+lrc20-controller = { path = "../../crates/controller" }
+lrc20-tx-check = { path = "../../crates/tx-check" }
+bitcoin-client = { path = "../../crates/bitcoin-client" }
+lrc20-tx-attach = { path = "../../crates/tx-attach" }
+lrc20-tx-confirm = { path = "../../crates/tx-confirm" }
+lrc20-rpc-server = { path = "../../crates/rpc-server" }
+lrc20-indexers = { path = "../../crates/indexers" }
+event-bus = { path = "../../crates/event-bus" }
+lrc20-p2p = { path = "../../crates/p2p" }
+
+tokio = { workspace = true, features = ["full"] }
+tokio-util = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["fmt", "env-filter", "json"] }
+bitcoin = { workspace = true, features = ["serde"] }
+eyre = { workspace = true }
+serde = { workspace = true }
+config = { workspace = true }
+
+fastrand = { version = "2.0.1" }
+clap = { version = "4.1.6", features = ["derive", "cargo"] }
+serde_json = { version = "1.0" }
+chrono = { version = "0.4.35" }

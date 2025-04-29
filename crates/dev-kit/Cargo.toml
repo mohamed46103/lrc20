@@ -1,0 +1,50 @@
+[package]
+name = "lrcdk"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default = [ "full" ]
+full = [ "inmemory", "sqlite" ]
+# Include inmemory wallet implementation.
+inmemory = [  ]
+# Include one with sqlite for data.
+sqlite = [ "dep:sqlx", "bdk/sqlite" ]
+bulletproof = ["lrc20-receipts/bulletproof", "lrc20-types/bulletproof"]
+
+[dependencies]
+bdk = { path = "../bdk", features = ["rpc", "use-esplora-blocking"] }
+tokio = { workspace = true, features = ["sync"] }
+lrc20-types = { path = "../types", features = ["messages"] }
+lrc20-receipts = { path = "../receipts" }
+bulletproof = { path = "../bulletproof" }
+lrc20-rpc-api = { path = "../rpc-api", features = ["client"], default-features = false }
+
+rand = { version = "0.8.5" }
+hashbrown = { version = "0.14.5" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+eyre = { workspace = true }
+tracing = { workspace = true }
+bitcoin = { workspace = true, features = ["serde", "base64", "rand"] }
+jsonrpsee = { workspace = true }
+futures = { workspace = true, features = ["std"]}
+ciborium = { workspace = true }
+
+
+[dependencies.sqlx]
+version = "0.7.4"
+default-features = false
+features = ["macros", "migrate", "runtime-tokio", "sqlite", "json"]
+optional = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "test-util"] }
+once_cell = { workspace = true }
+serde_json.workspace = true
+bitcoin-client.path = "../bitcoin-client"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(test)'] }

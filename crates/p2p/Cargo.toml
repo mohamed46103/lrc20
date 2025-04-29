@@ -1,0 +1,36 @@
+[package]
+name = "lrc20-p2p"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+mocks = ["dep:mockall"]
+
+[dependencies]
+bitcoin_hashes = { version = "0.11.0" }
+popol = { version = "2" }
+socket2 = { version = "0.4" }
+libc = { version = "0.2" }
+fastrand = { version = "2.0.1" }
+hickory-resolver = { version = "0.25.1" }
+
+event-bus = { path = "../event-bus" }
+lrc20-types = { path = "../types", features = ["messages", "consensus"] }
+
+tracing = { workspace = true }
+thiserror = { workspace = true }
+eyre = { workspace = true }
+async-trait = { workspace = true }
+flume = { workspace = true }
+bitcoin = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt"] }
+tokio-util = { workspace = true }
+serde = { workspace = true }
+mockall = { workspace = true, optional = true }
+prometheus = { workspace = true }
+lazy_static = { workspace = true }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(test)'] }

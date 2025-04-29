@@ -1,0 +1,52 @@
+[package]
+name = "lrc20-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+bulletproof = [
+    "lrc20-receipts/bulletproof",
+    "lrcdk/bulletproof",
+    "lrc20-storage/bulletproof",
+]
+
+[dependencies]
+lrcdk = { path = "../../crates/dev-kit" }
+bdk = { path = "../../crates/bdk", features = [
+    "rpc",
+    "std",
+    "use-esplora-blocking",
+], default-features = false }
+bulletproof = { path = "../../crates/bulletproof" }
+lrc20-types = { path = "../../crates/types", features = ["consensus"] }
+lrc20-receipts = { path = "../../crates/receipts" }
+lrc20-tx-check = { path = "../../crates/tx-check" }
+lrc20-rpc-api = { path = "../../crates/rpc-api", features = [
+    "client",
+], default-features = false }
+lrc20-storage = { path = "../../crates/storage" }
+bitcoin-client = { path = "../../crates/bitcoin-client" }
+
+bitcoin = { workspace = true }
+jsonrpsee = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+config = { workspace = true }
+
+serde_json = { version = "1.0" }
+indicatif = { version = "0.17.8" }
+toml = { version = "0.8.12" }
+color-eyre = { workspace = true }
+tracing-subscriber = { workspace = true, features = [
+    "fmt",
+    "ansi",
+    "tracing-log",
+] }
+tracing = { workspace = true }
+sha2 = { version = "0.10.8" }
+clap = { version = "4.3.23", features = ["derive"] }
+clap-verbosity = { version = "2.1.0" }
+tracing-log = "0.2.0"

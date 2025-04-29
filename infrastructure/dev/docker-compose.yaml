@@ -1,0 +1,244 @@
+version: "3"
+services:
+  bitcoind:
+    image: lncm/bitcoind:v26.0
+    container_name: bitcoind
+    restart: on-failure
+    stop_grace_period: 30s
+    user: 0:0
+    healthcheck:
+      test: [ "CMD", "bitcoin-cli", "getnetworkinfo" ]
+      interval: 2s
+    volumes:
+      - ./infrastructure/dev/configs/bitcoind.conf:/root/.bitcoin/bitcoin.conf
+      - ./volumes.dev/bitcoind:/root/.bitcoin
+      - ./infrastructure/dev/configs/faucet.sh:/faucet.sh
+    command: [ "-addnode=bitcoind2:18444" ]
+    entrypoint:
+      - "sh"
+      - "-c"
+      - "bitcoind"
+    ports:
+      - 18443:18443
+      - 18444:18444
+
+  bitcoind2:
+    image: lncm/bitcoind:v26.0
+    container_name: bitcoind2
+    restart: on-failure
+    stop_grace_period: 30s
+    user: 0:0
+    healthcheck:
+      test: [ "CMD", "bitcoin-cli", "getnetworkinfo" ]
+      interval: 2s
+    volumes:
+      - ./infrastructure/dev/configs/bitcoind.conf:/root/.bitcoin/bitcoin.conf
+      - ./volumes.dev/bitcoind2:/root/.bitcoin
+    command: [ "-addnode=bitcoind:18444" ]
+    profiles:
+      - end_to_end
+    ports:
+      - 18445:18443
+      - 18446:18444
+
+  electrs:
+    image: ghcr.io/vulpemventures/electrs:latest
+    container_name: electrs
+    entrypoint:
+      - /build/electrs
+    command:
+      - -vvvv
+      - --network
+      - regtest
+      - --daemon-dir
+      - /config
+      - --daemon-rpc-addr
+      - bitcoind:18443
+      - --cookie
+      - admin1:123
+      - --http-addr
+      - 0.0.0.0:30000
+      - --electrum-rpc-addr
+      - 0.0.0.0:50000
+      - --cors
+      - "*"
+      - --jsonrpc-import
+    depends_on:
+      bitcoind:
+        condition: service_healthy
+    ports:
+      - 30000:30000
+    volumes:
+      - ./volumes.dev/bitcoind/:/config
+    profiles:
+      - end_to_end
+    restart: on-failure
+
+  electrs2:
+    image: ghcr.io/vulpemventures/electrs:latest
+    container_name: electrs2
+    entrypoint:
+      - /build/electrs
+    command:
+      - -vvvv
+      - --network
+      - regtest
+      - --daemon-dir
+      - /config
+      - --daemon-rpc-addr
+      - bitcoind2:18443
+      - --cookie
+      - admin1:123
+      - --http-addr
+      - 0.0.0.0:30000
+      - --electrum-rpc-addr
+      - 0.0.0.0:50000
+      - --cors
+      - "*"
+      - --jsonrpc-import
+    depends_on:
+      bitcoind2:
+        condition: service_healthy
+    ports:
+      - 30001:30000
+    volumes:
+      - ./volumes.dev/bitcoind2/:/config
+    profiles:
+      - end_to_end
+    restart: on-failure
+
+  lrc20d:
+    image: lightspark/lrc20d
+    build:
+      context: .
+      dockerfile: ./infrastructure/build/lrc20d.Dockerfile
+    container_name: lrc20d
+    restart: on-failure
+    volumes:
+      - ./infrastructure/dev/configs/lrc20d.toml:/config.toml
+      - ./volumes.dev/lrc20d:/var/lrc20d
+    ports:
+      - 8001:8001 # p2p
+      - 18333:18333 # rpc
+      - 50051:50051 # grpc
+    entrypoint:
+      - sh
+      - -c
+      - |
+        migration up -u postgresql://postgres:postgres@postgres1:5432/lrc20d?sslmode=disable
+        lrc20d run --config /config.toml
+    depends_on:
+      postgres1:
+        condition: service_started
+      bitcoind:
+        condition: service_healthy
+
+  lrc20d2:
+    image: lightspark/lrc20d
+    build:
+      context: .
+      dockerfile: ./infrastructure/build/lrc20d.Dockerfile
+    restart: on-failure
+    profiles:
+      - two_nodes_setup
+      - three_nodes_setup
+      - end_to_end
+    container_name: lrc20d2
+    volumes:
+      - ./infrastructure/dev/configs/lrc20d-2.toml:/config.toml
+      - ./volumes.dev/lrc20d2:/var/lrc20d2
+    ports:
+      - 8003:8003 # p2p
+      - 18335:18335 # rpc
+      - 50052:50052 # grpc
+    entrypoint:
+      - sh
+      - -c
+      - |
+        migration up -u postgresql://postgres:postgres@postgres2:5432/lrc20d?sslmode=disable
+        lrc20d run --config /config.toml
+    depends_on:
+      postgres2:
+        condition: service_started
+      bitcoind:
+        condition: service_healthy
+      lrc20d:
+        condition: service_started
+
+  lrc20d3:
+    image: lightspark/lrc20d
+    build:
+      context: .
+      dockerfile: ./infrastructure/build/lrc20d.Dockerfile
+    depends_on:
+      postgres3:
+        condition: service_started
+      bitcoind:
+        condition: service_healthy
+      lrc20d:
+        condition: service_started
+      lrc20d2:
+        condition: service_started
+    restart: on-failure
+    profiles:
+      - three_nodes_setup
+      - end_to_end
+    container_name: lrc20d3
+    volumes:
+      - ./infrastructure/dev/configs/lrc20d-3.toml:/config.toml
+      - ./volumes.dev/lrc20d3:/var/lrc20d3
+    ports:
+      - 8004:8004 # p2p
+      - 18336:18336 # rpc
+      - 50053:50053 # grpc
+    entrypoint:
+      - sh
+      - -c
+      - |
+        migration up -u postgresql://postgres:postgres@postgres3:5432/lrc20d?sslmode=disable
+        lrc20d run --config /config.toml
+
+  postgres1:
+    image: postgres:17.4
+    container_name: postgres1
+    environment:
+      - POSTGRES_DB=lrc20d
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5450:5432
+    volumes:
+      - ./volumes.dev/postgres1:/var/postgres1
+
+  postgres2:
+    image: postgres:17.4
+    container_name: postgres2
+    environment:
+      - POSTGRES_DB=lrc20d
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5451:5432
+    volumes:
+      - ./volumes.dev/postgres2:/var/postgres2
+  
+  postgres3:
+    image: postgres:17.4
+    container_name: postgres3
+    environment:
+      - POSTGRES_DB=lrc20d
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5452:5432
+    volumes:
+      - ./volumes.dev/postgres3:/var/postgres3
+
+volumes:
+  bitcoind:
+  lrc20d:
+  lrc20d2:
+  lrc20d3:
+  postgres1:
+  postgres2:
+  postgres3:

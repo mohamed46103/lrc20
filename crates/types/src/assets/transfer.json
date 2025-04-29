@@ -1,0 +1,107 @@
+{
+  "bitcoin_tx": {
+    "version": 1,
+    "lock_time": 116,
+    "input": [
+      {
+        "previous_output": "228a46c8f17da13b096c555271a4cda996a6522caef77520f4fe3002627bf2fc:1",
+        "script_sig": "",
+        "sequence": 4294967294,
+        "witness": [
+          "304402202dca726ad3894d5f7c17fe9b3910633e78fddd38ca196fd24480e2df4a1e458b02207ca5cc18439ee35a60edc04d5f3e62c81e0138ed0cc639dd343bf712b7e54e2401",
+          "035b30e4fbf542edfcd598995040c797e66e9e7f50b100616facdf53ffc1046030"
+        ]
+      },
+      {
+        "previous_output": "c7f321094af894463e2e94bfe3230be44ebcae0a1da1f0f5c390105b12a03d55:1",
+        "script_sig": "",
+        "sequence": 4294967294,
+        "witness": [
+          "30440220089af802b7ffaa6a43a3dc982006af31537b5c00cb2642183abae1f84f134a2d0220638220ebf04350233edcb991df4f5486570c484037b852a781aa2e16c44b165601",
+          "035f595ca2f340e9b02c206e5720aba682050e22b664d261896cf11a684c50e7ba"
+        ]
+      }
+    ],
+    "output": [
+      {
+        "value": 1000,
+        "script_pubkey": "0014f94c54990eec13690219c9ea3d3a848134831882"
+      },
+      {
+        "value": 1000,
+        "script_pubkey": "5120c6701bd46daa6f570c5b9a3f3dd2833d739a1285c25f5c6e620f098a34c8ca21"
+      },
+      {
+        "value": 1000,
+        "script_pubkey": "00140ef759ed4dc37aa9318063fb3155285e4d97adb6"
+      },
+      {
+        "value": 99997660,
+        "script_pubkey": "0014862c6d30531e12fcb2b1af4b061aa3a6ffbc39af"
+      }
+    ]
+  },
+  "tx_type": {
+    "type": "Transfer",
+    "data": {
+      "input_proofs": {
+        "1": {
+          "type": "Sig",
+          "data": {
+            "receipt": {
+              "token_amount": {
+                "amount": 30000
+              },
+              "token_pubkey": "025b30e4fbf542edfcd598995040c797e66e9e7f50b100616facdf53ffc1046030"
+            },
+            "inner_key": "025b30e4fbf542edfcd598995040c797e66e9e7f50b100616facdf53ffc1046030"
+          }
+        }
+      },
+      "output_proofs": {
+        "0": {
+          "type": "Sig",
+          "data": {
+            "receipt": {
+              "token_amount": {
+                "amount": 5000
+              },
+              "token_pubkey": "025b30e4fbf542edfcd598995040c797e66e9e7f50b100616facdf53ffc1046030"
+            },
+            "inner_key": "02a1f1ad0fe384b05504f8233209bad9e396f3f86b591e877dc1f95394306d9b94"
+          }
+        },
+        "1": {
+          "type": "P2TR",
+          "data": {
+            "receipt": {
+              "token_amount": {
+                "amount": 5000
+              },
+              "token_pubkey": "025b30e4fbf542edfcd598995040c797e66e9e7f50b100616facdf53ffc1046030"
+            },
+            "inner_key": "02a1f1ad0fe384b05504f8233209bad9e396f3f86b591e877dc1f95394306d9b94"
+          }
+        },
+        "2": {
+          "type": "Sig",
+          "data": {
+            "receipt": {
+              "token_amount": {
+                "amount": 20000
+              },
+              "token_pubkey": "025b30e4fbf542edfcd598995040c797e66e9e7f50b100616facdf53ffc1046030"
+            },
+            "inner_key": "035b30e4fbf542edfcd598995040c797e66e9e7f50b100616facdf53ffc1046030"
+          }
+        },
+        "3": {
+          "type": "EmptyReceipt",
+          "data": {
+            "inner_key": "025b30e4fbf542edfcd598995040c797e66e9e7f50b100616facdf53ffc1046030"
+          }
+        }
+      }
+    }
+  }
+}
